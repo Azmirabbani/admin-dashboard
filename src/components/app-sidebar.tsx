@@ -30,7 +30,7 @@ const data = {
     },
   ],
   navMain: [
-    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, items: [] },
+    { title: "Dashboard", url: "/", icon: LayoutDashboard, items: [] },
     { title: "Announcement", url: "/admin/announcement", icon: Megaphone, items: [] },
     { title: "Group Chat", url: "/admin/group-chat", icon: Users, items: [] },
     { title: "Inbox", url: "/admin/inbox", icon: Mail, items: [] },
