@@ -20,20 +20,19 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 
-import PupukLogo from "@/components/icons/PupukLogo";
+// import PupukLogo from "@/components/icons/PupukLogo";
 
 const data = {
   teams: [
-    {
-      name: "PUPUK KUJANG",
-      logo: PupukLogo,
-    },
+  //   {
+  //     name: "PUPUK KUJANG",
+  //     logo: PupukLogo,
+  //   },
   ],
   navMain: [
     { title: "Dashboard", url: "/", icon: LayoutDashboard, items: [] },
     { title: "Announcement", url: "/admin/announcement", icon: Megaphone, items: [] },
     { title: "Group Chat", url: "/admin/group-chat", icon: Users, items: [] },
-    { title: "Inbox", url: "/admin/inbox", icon: Mail, items: [] },
     { title: "Kalender", url: "/admin/calendar", icon: CalendarIcon, items: [] }, // ← Kalender ditambahkan ke navMain
   ],
   footerNav: [
@@ -46,17 +45,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar
       collapsible="icon"
-      className="bg-[var(--kujang-green-bg)] text-black"
+      className="bg-[var(--kujang-green-bg)] text-black py-4"
       {...props}
     >
       <SidebarHeader>
-        {/* Logo dan Nama */}
-        <div className="flex items-center gap-2 px-4 py-4">
-          <PupukLogo className="w-8 h-8" />
-          <div className="text-black font-bold text-lg">
-            PUPUK KUJANG
-          </div>
-        </div>
+       
       </SidebarHeader>
 
       <SidebarContent>
