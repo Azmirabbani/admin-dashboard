@@ -31,12 +31,12 @@ const data = {
   ],
   navMain: [
     { title: "Dashboard", url: "/", icon: LayoutDashboard, items: [] },
-    { title: "Announcement", url: "/admin/announcement", icon: Megaphone, items: [] },
+    { title: "Pengumuman", url: "/admin/announcement", icon: Megaphone, items: [] },
     { title: "Group Chat", url: "/admin/group-chat", icon: Users, items: [] },
-    { title: "Kalender", url: "/admin/calendar", icon: CalendarIcon, items: [] }, // ← Kalender ditambahkan ke navMain
+    { title: "Kalender", url: "/admin/calendar", icon: CalendarIcon, items: [] }, 
   ],
   footerNav: [
-    { title: "Settings", url: "/", icon: Settings },
+    { title: "Settings", url: "/admin/settings", icon: Settings },
     { title: "Get Help", url: "/admin/help", icon: HelpCircle },
   ],
 };
