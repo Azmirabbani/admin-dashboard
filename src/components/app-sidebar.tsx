@@ -36,7 +36,7 @@ const data = {
     { title: "Kalender", url: "/admin/calendar", icon: CalendarIcon, items: [] }, // ← Kalender ditambahkan ke navMain
   ],
   footerNav: [
-    { title: "Settings", url: "/admin/settings", icon: Settings },
+    { title: "Settings", url: "/", icon: Settings },
     { title: "Get Help", url: "/admin/help", icon: HelpCircle },
   ],
 };
