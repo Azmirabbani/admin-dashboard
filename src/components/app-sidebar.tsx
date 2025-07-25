@@ -34,6 +34,7 @@ const data = {
     { title: "Pengumuman", url: "/admin/announcement", icon: Megaphone, items: [] },
     { title: "Group Chat", url: "/admin/group-chat", icon: Users, items: [] },
     { title: "Kalender", url: "/admin/calendar", icon: CalendarIcon, items: [] }, 
+    { title: "Pegawai", url: "/admin/pegawai", icon: Users, items: [] },
   ],
   footerNav: [
     { title: "Settings", url: "/admin/settings", icon: Settings },
