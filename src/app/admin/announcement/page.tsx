@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -41,6 +41,21 @@ const departments = [
 ]
 
 export default function AnnouncementPage() {
+  const [filter, setFilter] = useState("all")
+  
+  // Effect untuk membaca URL parameter saat component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const filterParam = urlParams.get('filter')
+      
+      // Set filter berdasarkan URL parameter
+      if (filterParam && ['active', 'latest', 'all'].includes(filterParam)) {
+        setFilter(filterParam)
+      }
+    }
+  }, [])
+  
   const [form, setForm] = useState<Announcement>({
     title: "",
     recipient: "",
@@ -81,7 +96,7 @@ export default function AnnouncementPage() {
       department: "R&D",
       message: "Proposal untuk quarter 3 harus dikumpulkan paling lambat Sabtu ini. Mohon koordinasi dengan tim masing-masing.",
       date: "2025-07-22",
-      endDate: "2025-07-25",
+      endDate: "2025-07-26", // Masih aktif
       author: "Admin",
       isPinned: false,
       documents: [
@@ -95,7 +110,7 @@ export default function AnnouncementPage() {
       department: "Teknologi Informasi",
       message: "Evaluasi sistem akan dilakukan minggu depan. Pastikan backup data sudah dilakukan.",
       date: "2025-07-20",
-      endDate: "2025-07-28",
+      endDate: "2025-07-28", // Masih aktif
       author: "Admin",
       isPinned: false,
       documents: [],
@@ -107,16 +122,26 @@ export default function AnnouncementPage() {
       department: "Keuangan",
       message: "Harap kumpulkan laporan bulanan sebelum tanggal 25. Format laporan mengikuti template terbaru.",
       date: "2025-07-19",
-      endDate: "2025-07-25",
+      endDate: "2025-07-24", // Sudah kadaluarsa
       author: "Admin",
       isPinned: false,
       documents: [
         { name: "Format_Laporan_Bulanan.pdf", url: "#", size: "123 KB", type: "pdf" }
       ],
     },
+    {
+      id: "5",
+      title: "Meeting Evaluasi Tahunan",
+      recipient: "Direksi",
+      department: "Administrasi",
+      message: "Meeting evaluasi tahunan akan dilaksanakan pada tanggal 30 Juli 2025. Mohon kehadiran semua pihak terkait.",
+      date: "2025-07-25", // Hari ini
+      endDate: "2025-07-30",
+      author: "Admin",
+      isPinned: false,
+      documents: [],
+    },
   ])
-
-  const [filter, setFilter] = useState("all")
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -245,22 +270,62 @@ export default function AnnouncementPage() {
     })
   }
 
-  const getFilteredAnnouncements = (type: string) => {
+  // Fungsi untuk menentukan apakah pengumuman masih aktif
+  const isAnnouncementActive = (endDate: string) => {
     const today = new Date()
+    today.setHours(0, 0, 0, 0) // Set ke awal hari
+    const end = new Date(endDate)
+    end.setHours(23, 59, 59, 999) // Set ke akhir hari
+    return end >= today
+  }
+
+  // Fungsi untuk menentukan apakah pengumuman adalah "terbaru" (dalam 7 hari terakhir)
+  const isAnnouncementRecent = (date: string) => {
+    const today = new Date()
+    const announcementDate = new Date(date)
+    const diffTime = today.getTime() - announcementDate.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays <= 7 // Pengumuman dalam 7 hari terakhir dianggap terbaru
+  }
+
+  const getFilteredAnnouncements = (type: string) => {
     let filtered = [...announcements]
 
     if (type === "active") {
-      filtered = filtered.filter((a) => new Date(a.endDate) >= today)
+      // Hanya tampilkan pengumuman yang masih aktif (belum kedaluwarsa)
+      filtered = filtered.filter((a) => isAnnouncementActive(a.endDate))
     } else if (type === "latest") {
+      // Hanya tampilkan pengumuman terbaru (dalam 7 hari terakhir)
+      filtered = filtered.filter((a) => isAnnouncementRecent(a.date))
+      // Urutkan berdasarkan tanggal terbaru
+      filtered = filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    } else {
+      // Untuk "all", urutkan berdasarkan tanggal terbaru
       filtered = filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     }
 
-    // Always show pinned announcements first
+    // Selalu tampilkan pengumuman yang di-pin di atas
     return filtered.sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1
       if (!a.isPinned && b.isPinned) return 1
       return 0
     })
+  }
+
+  // Fungsi untuk mendapatkan badge status
+  const getStatusBadge = (announcement: Announcement) => {
+    const isActive = isAnnouncementActive(announcement.endDate)
+    const isRecent = isAnnouncementRecent(announcement.date)
+    
+    if (!isActive) {
+      return <span className="text-xs bg-red-100 px-2 py-0.5 rounded-full text-red-700 font-medium">⏰ Kedaluwarsa</span>
+    }
+    
+    if (isRecent) {
+      return <span className="text-xs bg-green-100 px-2 py-0.5 rounded-full text-green-700 font-medium">🆕 Baru</span>
+    }
+    
+    return <span className="text-xs bg-blue-100 px-2 py-0.5 rounded-full text-blue-700 font-medium">✅ Aktif</span>
   }
 
   const AnnouncementList = ({ type }: { type: string }) => {
@@ -278,27 +343,68 @@ export default function AnnouncementPage() {
       return (seed * 7 + 15) % 85 + 10 // Will always return same number for same input
     }
 
+    // Fungsi untuk menghitung sisa hari
+    const getDaysRemaining = (endDate: string) => {
+      const today = new Date()
+      const end = new Date(endDate)
+      const diffTime = end.getTime() - today.getTime()
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      
+      if (diffDays < 0) return "Kedaluwarsa"
+      if (diffDays === 0) return "Berakhir hari ini"
+      if (diffDays === 1) return "1 hari lagi"
+      return `${diffDays} hari lagi`
+    }
+
     return (
       <div className="flex flex-col gap-3 h-[calc(100vh-280px)] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        {/* Summary untuk filter aktif */}
+        {type !== "all" && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              {type === "active" && (
+                <>
+                  <span>✅</span>
+                  <span className="font-semibold">Pengumuman Aktif:</span>
+                  <span>{list.length} pengumuman masih berlaku</span>
+                </>
+              )}
+              {type === "latest" && (
+                <>
+                  <span>🆕</span>
+                  <span className="font-semibold">Pengumuman Terbaru:</span>
+                  <span>{list.length} pengumuman dalam 7 hari terakhir</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {list.map((a, index) => (
           <Card
             key={a.id}
             className={`p-3 border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex-shrink-0 ${
               a.isPinned 
                 ? 'bg-yellow-50 text-yellow-900 border-yellow-300 shadow-yellow-100' 
-                : 'bg-[var(--kujang-green-bg)] text-[var(--kujang-green)] border-[var(--kujang-green)]'
+                : isAnnouncementActive(a.endDate)
+                  ? 'bg-[var(--kujang-green-bg)] text-[var(--kujang-green)] border-[var(--kujang-green)]'
+                  : 'bg-gray-50 text-gray-600 border-gray-300 opacity-75'
             }`}
           >
             {/* Header dengan avatar dan info */}
             <div className="flex items-center gap-2 mb-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs ${
-                a.isPinned ? 'bg-yellow-500' : 'bg-[var(--kujang-green)]'
+                a.isPinned ? 'bg-yellow-500' : 
+                isAnnouncementActive(a.endDate) ? 'bg-[var(--kujang-green)]' : 'bg-gray-400'
               }`}>
                 {a.isPinned ? '📌' : '👤'}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className={`font-semibold text-xs ${a.isPinned ? 'text-yellow-900' : 'text-[var(--kujang-green)]'}`}>
+                  <span className={`font-semibold text-xs ${
+                    a.isPinned ? 'text-yellow-900' : 
+                    isAnnouncementActive(a.endDate) ? 'text-[var(--kujang-green)]' : 'text-gray-600'
+                  }`}>
                     Admin
                   </span>
                   {a.isPinned && (
@@ -306,19 +412,27 @@ export default function AnnouncementPage() {
                       📌 Pin
                     </span>
                   )}
+                  {getStatusBadge(a)}
                 </div>
-                <div className={`text-xs ${a.isPinned ? 'text-yellow-700' : 'text-[var(--kujang-green)]/70'}`}>
-                  {formatDate(a.date)} • Berlaku sampai {formatDate(a.endDate)}
+                <div className={`text-xs ${
+                  a.isPinned ? 'text-yellow-700' : 
+                  isAnnouncementActive(a.endDate) ? 'text-[var(--kujang-green)]/70' : 'text-gray-500'
+                }`}>
+                  {formatDate(a.date)} • {getDaysRemaining(a.endDate)}
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <div className={`text-xs px-2 py-0.5 rounded-full ${a.isPinned ? 'bg-yellow-200 text-yellow-700' : 'bg-[var(--kujang-green)]/10 text-[var(--kujang-green)]'}`}>
+                <div className={`text-xs px-2 py-0.5 rounded-full ${
+                  a.isPinned ? 'bg-yellow-200 text-yellow-700' : 
+                  isAnnouncementActive(a.endDate) ? 'bg-[var(--kujang-green)]/10 text-[var(--kujang-green)]' : 'bg-gray-200 text-gray-600'
+                }`}>
                   📋
                 </div>
                 {/* Admin Actions Dropdown */}
                 <div className="relative group">
                   <button className={`p-1 rounded-full hover:bg-gray-200 transition-colors text-xs ${
-                    a.isPinned ? 'text-yellow-700' : 'text-[var(--kujang-green)]'
+                    a.isPinned ? 'text-yellow-700' : 
+                    isAnnouncementActive(a.endDate) ? 'text-[var(--kujang-green)]' : 'text-gray-600'
                   }`}>
                     ⋮
                   </button>
@@ -348,14 +462,19 @@ export default function AnnouncementPage() {
 
             {/* Content */}
             <div className="mb-2">
-              <h3 className={`text-sm font-bold mb-1.5 ${a.isPinned ? 'text-yellow-900' : 'text-[var(--kujang-green)]'}`}>
+              <h3 className={`text-sm font-bold mb-1.5 ${
+                a.isPinned ? 'text-yellow-900' : 
+                isAnnouncementActive(a.endDate) ? 'text-[var(--kujang-green)]' : 'text-gray-600'
+              }`}>
                 {a.title}
               </h3>
               <div className="flex gap-1.5 mb-1.5 flex-wrap">
                 <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
                   a.isPinned 
                     ? 'bg-yellow-200 text-yellow-800' 
-                    : 'bg-[var(--kujang-green)]/20 text-[var(--kujang-green)]'
+                    : isAnnouncementActive(a.endDate)
+                      ? 'bg-[var(--kujang-green)]/20 text-[var(--kujang-green)]'
+                      : 'bg-gray-200 text-gray-600'
                 }`}>
                    {a.department}
                 </span>
@@ -363,7 +482,10 @@ export default function AnnouncementPage() {
                   👥 {a.recipient}
                 </span>
               </div>
-              <p className={`leading-relaxed text-xs ${a.isPinned ? 'text-yellow-800' : 'text-[var(--kujang-green)]/90'}`}>
+              <p className={`leading-relaxed text-xs ${
+                a.isPinned ? 'text-yellow-800' : 
+                isAnnouncementActive(a.endDate) ? 'text-[var(--kujang-green)]/90' : 'text-gray-600'
+              }`}>
                 {a.message}
               </p>
               
@@ -397,7 +519,10 @@ export default function AnnouncementPage() {
 
             {/* Footer dengan views */}
             <div className="flex justify-end pt-1.5 border-t border-gray-100">
-              <div className={`flex items-center gap-1 text-xs ${a.isPinned ? 'text-yellow-700' : 'text-[var(--kujang-green)]/70'}`}>
+              <div className={`flex items-center gap-1 text-xs ${
+                a.isPinned ? 'text-yellow-700' : 
+                isAnnouncementActive(a.endDate) ? 'text-[var(--kujang-green)]/70' : 'text-gray-500'
+              }`}>
                 <span>👁</span>
                 <span>{getViewCount(index, a.title)} views</span>
               </div>
@@ -407,9 +532,19 @@ export default function AnnouncementPage() {
         
         {list.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-            <div className="text-4xl mb-4">📭</div>
-            <p className="text-sm">Belum ada pengumuman</p>
-            <p className="text-xs text-gray-400">Buat pengumuman pertama dari panel admin</p>
+            <div className="text-4xl mb-4">
+              {type === "active" ? "⏰" : type === "latest" ? "📅" : "📭"}
+            </div>
+            <p className="text-sm">
+              {type === "active" ? "Tidak ada pengumuman aktif" : 
+               type === "latest" ? "Tidak ada pengumuman terbaru" : 
+               "Belum ada pengumuman"}
+            </p>
+            <p className="text-xs text-gray-400">
+              {type === "active" ? "Semua pengumuman sudah kedaluwarsa" : 
+               type === "latest" ? "Belum ada pengumuman dalam 7 hari terakhir" : 
+               "Buat pengumuman pertama dari panel admin"}
+            </p>
           </div>
         )}
       </div>
@@ -580,9 +715,22 @@ export default function AnnouncementPage() {
         {/* Daftar Pengumuman - Fixed height with proper scrolling */}
         <div className="flex-1 bg-white shadow-lg rounded-xl h-[calc(100vh-48px)] flex flex-col">
           <div className="p-6 border-b border-gray-200 flex-shrink-0">
-            <Tabs defaultValue="all" value={filter} onValueChange={setFilter} className="w-full">
+            <Tabs value={filter} onValueChange={setFilter} className="w-full">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-800">📋 Daftar Pengumuman</h2>
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                  📋 Daftar Pengumuman
+                  {/* Indicator berdasarkan filter URL */}
+                  {filter === 'active' && (
+                    <span className="text-sm bg-green-100 px-2 py-1 rounded-full text-green-700 font-medium">
+                      ✅ Aktif
+                    </span>
+                  )}
+                  {filter === 'latest' && (
+                    <span className="text-sm bg-blue-100 px-2 py-1 rounded-full text-blue-700 font-medium">
+                      🆕 Terbaru
+                    </span>
+                  )}
+                </h2>
                 <TabsList className="bg-gray-100 p-1 rounded-xl">
                   <TabsTrigger value="all" className="px-4 py-2 rounded-lg text-sm">Semua</TabsTrigger>
                   <TabsTrigger value="latest" className="px-4 py-2 rounded-lg text-sm">Terbaru</TabsTrigger>

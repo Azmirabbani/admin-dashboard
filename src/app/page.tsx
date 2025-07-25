@@ -67,11 +67,13 @@ export default function Page() {
               title="Pengumuman Aktif"
               value={activeAnnouncements}
               icon={<Megaphone className="w-6 h-6 text-green-600" />}
+              href="/admin/announcement?filter=active"
             />
             <DashboardCard
               title="Pengumuman Terbaru"
               value={latestAnnouncementTitle}
               icon={<ScrollText className="w-6 h-6 text-green-600" />}
+              href="/admin/announcement?filter=latest"
             />
           </div>
 
